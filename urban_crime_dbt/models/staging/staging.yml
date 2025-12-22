@@ -1,0 +1,20 @@
+version: 2
+
+models:
+  - name: stg_crime_chicago
+    description: "Cleaned Chicago crime incidents from the raw open data."
+    columns:
+      - name: id
+        description: "Unique record id from source."
+        tests:
+          - not_null
+
+      - name: incident_timestamp
+        description: "Timestamp of the incident."
+        tests:
+          - not_null
+
+      - name: crime_category
+        description: "High-level crime type from primary_type."
+        tests:
+          - not_null
