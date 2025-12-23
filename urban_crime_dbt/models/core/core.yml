@@ -1,0 +1,88 @@
+version: 2
+
+models:
+  - name: dim_crime_type
+    description: "Dimension table with one row per crime type (category + FBI code) for Chicago crime data."
+    columns:
+      - name: crime_type_key
+        description: "Surrogate key built from crime_category and fbi_code."
+        tests:
+          - not_null
+          - unique
+
+      - name: crime_category
+        description: "High-level crime category (Chicago primary_type)."
+        tests:
+          - not_null
+
+      - name: fbi_code
+        description: "FBI offense code associated with the crime type, if available."
+
+      - name: severity_level
+        description: "Business-defined severity band for the crime type (LOW/MEDIUM/HIGH/CRITICAL)."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
+
+      - name: is_violent_crime
+        description: "Flag indicating whether this crime type is considered violent."
+      - name: is_property_crime
+        description: "Flag indicating whether this crime type mainly affects property."
+
+  - name: dim_location
+    description: "Location dimension for Chicago crime data, one row per district + community area + ward."
+    columns:
+      - name: location_key
+        description: "Surrogate key built from district, community area and ward."
+        tests:
+          - not_null
+          - unique
+
+      - name: police_district
+        description: "Police district identifier for the area."
+        tests:
+          - not_null
+
+      - name: community_area
+        description: "Community area identifier for the area."
+        tests:
+          - not_null
+
+      - name: ward
+        description: "Ward identifier for the area."
+        tests:
+          - not_null
+
+      - name: avg_latitude
+        description: "Average latitude for incidents in this area (centroid approximation)."
+
+      - name: avg_longitude
+        description: "Average longitude for incidents in this area (centroid approximation)."
+  - name: dim_date
+    description: "Date dimension table covering the full incident_date range used in the crime analytics model."
+    columns:
+      - name: date_key
+        description: "Surrogate key for the date in YYYYMMDD numeric format."
+        tests:
+          - not_null
+          - unique
+
+      - name: date
+        description: "Calendar date."
+        tests:
+          - not_null
+
+      - name: year
+        description: "Calendar year extracted from the date."
+
+      - name: month
+        description: "Calendar month number (1–12)."
+
+      - name: day_of_month
+        description: "Day of month (1–31)."
+
+      - name: is_weekend
+        description: "Flag indicating whether the date falls on a Saturday or Sunday."
+        tests:
+          - not_null
