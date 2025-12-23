@@ -1,45 +1,36 @@
 {{ config(
     schema = 'CORE',
     materialized = 'table',
-    tags = ['core', 'date', 'calendar']
+    tags = ['core', 'date', 'calendar', 'chicago']
 ) }}
 
 -- dim_date:
--- One row per calendar date, covering the full range of incident_date
--- found in stg_crime_chicago.
+-- One row per calendar date, from min(incident_date) to max(incident_date)
+-- found in stg_crime_chicago. No extra padding dates.
 
-WITH bounds AS (
+WITH RECURSIVE
+bounds AS (
     SELECT
         MIN(incident_date) AS min_date,
         MAX(incident_date) AS max_date
     FROM {{ ref('stg_crime_chicago') }}
 ),
-
-span AS (
-    SELECT
-        min_date,
-        max_date,
-        DATEDIFF('day', min_date, max_date) AS num_days
-    FROM bounds
-),
-
 dates AS (
+    -- Anchor: start at the minimum date
     SELECT
-        DATEADD(
-            'day',
-            SEQ4(),
-            (SELECT min_date FROM span)
-        ) AS date_day
-    FROM TABLE(
-        GENERATOR(
-            ROWCOUNT => (SELECT num_days + 1 FROM span)
-        )
-    )
-),
+        (SELECT min_date FROM bounds) AS date_day
 
+    UNION ALL
+
+    -- Recursive step: add 1 day until we reach max_date
+    SELECT
+        DATEADD('day', 1, date_day) AS date_day
+    FROM dates, bounds
+    WHERE DATEADD('day', 1, date_day) <= (SELECT max_date FROM bounds)
+),
 final AS (
     SELECT
-        -- Surrogate key in YYYYMMDD format
+        -- Surrogate key in YYYYMMDD format (still using TO_CHAR but no numeric casts around 'D', 'IYYY', etc.)
         TO_NUMBER(TO_CHAR(date_day, 'YYYYMMDD'))   AS date_key,
 
         date_day                                   AS date,
@@ -54,17 +45,20 @@ final AS (
         EXTRACT(QUARTER FROM date_day)            AS quarter,
         TO_CHAR(date_day, 'YYYY-"Q"Q')            AS year_quarter,
 
-        -- ISO week/year for consistent week-based analysis
-        TO_CHAR(date_day, 'IYYY')::NUMBER         AS iso_year,
-        TO_CHAR(date_day, 'IW')::NUMBER           AS iso_week,
+        -- Week/year (simple, non-ISO)
+        EXTRACT(YEAR FROM date_day)               AS iso_year,
+        EXTRACT(WEEK FROM date_day)               AS iso_week,
 
-        -- Day of week: 1 = Monday, 7 = Sunday (ISO)
-        TO_CHAR(date_day, 'D')::NUMBER            AS day_of_week_us,
+        -- Numeric day-of-week directly from Snowflake
+        DAYOFWEEK(date_day)                       AS day_of_week_us,
+
+        -- Text labels for readability
         TO_CHAR(date_day, 'DY')                   AS day_name_short,
         TO_CHAR(date_day, 'DAY')                  AS day_name,
 
+        -- Weekend flag: Sunday(1) or Saturday(7)
         CASE
-            WHEN DAYOFWEEK(date_day) IN (1, 7)    THEN TRUE  -- Sunday(1) or Saturday(7)
+            WHEN DAYOFWEEK(date_day) IN (1, 7) THEN TRUE
             ELSE FALSE
         END                                       AS is_weekend,
 

@@ -86,3 +86,30 @@ models:
         description: "Flag indicating whether the date falls on a Saturday or Sunday."
         tests:
           - not_null
+  - name: dim_date
+    description: "Date dimension table covering the full incident_date range used in the crime analytics model."
+    columns:
+      - name: date_key
+        description: "Surrogate key for the date in YYYYMMDD numeric format."
+        tests:
+          - not_null
+          - unique
+
+      - name: date
+        description: "Calendar date."
+        tests:
+          - not_null
+
+      - name: year
+        description: "Calendar year extracted from the date."
+
+      - name: month
+        description: "Calendar month number (1–12)."
+
+      - name: day_of_month
+        description: "Day of month (1–31)."
+
+      - name: is_weekend
+        description: "Flag indicating whether the date falls on a Saturday or Sunday."
+        tests:
+          - not_null
