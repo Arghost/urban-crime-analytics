@@ -1,0 +1,41 @@
+version: 2
+
+models:
+  - name: fct_crime_events
+    description: "Fact table with one row per crime incident in Chicago, linked to date, location and crime-type dimensions."
+    columns:
+      - name: crime_event_key
+        description: "Surrogate key for the crime event row."
+        tests:
+          - not_null
+          - unique
+
+      - name: id
+        description: "Natural identifier of the incident from the source system."
+        tests:
+          - not_null
+
+      - name: date_key
+        description: "Foreign key to dim_date."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_date')
+              field: date_key
+
+      - name: location_key
+        description: "Foreign key to dim_location."
+        tests:
+          - relationships:
+              to: ref('dim_location')
+              field: location_key
+
+      - name: crime_type_key
+        description: "Foreign key to dim_crime_type."
+        tests:
+          - relationships:
+              to: ref('dim_crime_type')
+              field: crime_type_key
+
+      - name: incident_count
+        description: "Measure, always 1 per row so incidents can be aggregated."
