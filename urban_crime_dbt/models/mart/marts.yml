@@ -39,3 +39,44 @@ models:
 
       - name: incident_count
         description: "Measure, always 1 per row so incidents can be aggregated."
+
+  - name: mart_crime_daily_by_area
+    description: "Daily crime metrics by area and crime type"
+    columns:
+      - name: date_key
+        description: "Foreign key to dim_date"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_date')
+              field: date_key
+
+      - name: crime_type_key
+        description: "Foreign key to dim_crime_type."
+        tests:
+          - relationships:
+              to: ref('dim_crime_type')
+              field: crime_type_key
+
+      - name: police_district
+        description: police district identifier
+
+      - name: total_incidents
+        description: "Total numbers of incidents in each area"
+        tests:
+          - not_null
+  - name: mart_crime_area_snapshot
+    description: "Yearly crime snapshot per area (district, community, ward), with arrest and domestic incident rates."
+    columns:
+      - name: year
+        description: "Calendar year."
+        tests:
+          - not_null
+
+      - name: police_district
+        description: "Police district identifier."
+        tests:
+          - not_null
+
+      - name: total_incidents
+        description: "Total incidents for that area and year."
