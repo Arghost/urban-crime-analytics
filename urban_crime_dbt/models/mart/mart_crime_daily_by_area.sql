@@ -1,7 +1,15 @@
 {{config (
     schema = 'MART',
     materialized = 'table',
-    tags = ['mart', 'chicago']
+    tags = ['mart', 'chicago'],
+
+    pre_hook = [
+        "insert into crime_analytics_dev.meta.DBT_MODEL_RUN_AUDIT (model_name, run_started_at, status) values ('mart_crime_daily_by_area', CURRENT_TIMESTAMP(), 'STARTED')"
+    ],
+    post_hook = [
+        "update crime_analytics_dev.meta.DBT_MODEL_RUN_AUDIT set run_finished_at = CURRENT_TIMESTAMP(), status = 'SUCCESS' where model_name = 'mart_crime_daily_by_area' and run_finished_at is null"
+    ]
+
 )}}
 
 with fact as (
